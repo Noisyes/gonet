@@ -4,25 +4,28 @@ import (
 	"net/http"
 )
 
-type HandlerFunc func(w http.ResponseWriter,response *http.Request)
+type HandlerFunc func(*Context)
 
 type Engine struct{
-	router map[string]HandlerFunc
+	router *router
 }
 
 func New() *Engine{
 	return &Engine{
-		router: make(map[string]HandlerFunc),
+		router: newRouter(),
 	}
 }
 
 func (engine *Engine) addRoute(method ,pattern string,handler HandlerFunc){
-	key := method + "-" + pattern
-	engine.router[key] = handler
+	engine.router.addRouter(method,pattern,handler)
 }
 
 func (engine *Engine) Get(pattern string, handler HandlerFunc){
 	engine.addRoute("GET",pattern,handler)
+}
+
+func (engine *Engine) POST(pattern string,handler HandlerFunc){
+	engine.addRoute("POST",pattern,handler)
 }
 
 func (engine *Engine) Run(address string) error{
@@ -30,13 +33,8 @@ func (engine *Engine) Run(address string) error{
 }
 
 func(engine *Engine) ServeHTTP(w http.ResponseWriter,r *http.Request){
-	key := r.Method +"-"+r.URL.Path
-	if handler , ok := engine.router[key]; ok{
-		handler(w,r)
-	}else{
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("404 not found"))
-	}
+	cxt := newContext(w,r)
+	engine.router.handle(cxt)
 }
 
 
