@@ -76,6 +76,11 @@ func (c *Context) JSON(code int,obj interface{}){
 	}
 }
 
+func (c *Context) Fail(code int,err string){
+	c.index = len(c.handlers)
+	c.JSON(code,H{"message":err})
+}
+
 func (c *Context) Data(code int,data []byte){
 	c.Status(code)
 	c.Writer.Write(data)
